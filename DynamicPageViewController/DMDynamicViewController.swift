@@ -30,6 +30,7 @@ protocol DMDynamicPageViewControllerDelegate {
 class DMDynamicViewController: UIViewController, UIScrollViewDelegate {
     
     var containerScrollView: UIScrollView! = nil
+    var dots: UIPageControl?
     var pageWidth: CGFloat = 1.0
     var viewControllers:Array<UIViewController>? = nil {
         didSet {
@@ -48,6 +49,7 @@ class DMDynamicViewController: UIViewController, UIScrollViewDelegate {
             containerScrollView.delegate = self
             // Set the fully switched page in order to notify the delegates about it if needed.
             self.fullySwitchedPage = self.currentPage;
+            self.dots!.currentPage = self.currentPage
         }
     }
     var fullySwitchedPage:Int = 0 {
@@ -71,7 +73,7 @@ class DMDynamicViewController: UIViewController, UIScrollViewDelegate {
         }
     }
     var delegate: DMDynamicPageViewControllerDelegate? = nil
-                            
+    
     init(viewControllers: Array<UIViewController>) {
         super.init(nibName: nil, bundle: nil)
         self.viewControllers = viewControllers
@@ -121,6 +123,8 @@ class DMDynamicViewController: UIViewController, UIScrollViewDelegate {
             page?.didMoveToParentViewController(self)
         }
         containerScrollView.contentSize = CGSizeMake(self.view.bounds.size.width * CGFloat(self.viewControllers!.count), 1.0)
+        dots!.numberOfPages = self.viewControllers!.count
+        dots!.currentPage = currentPage
     }
     
     func insertPage(viewController: UIViewController, atIndex index: Int) {
@@ -148,16 +152,50 @@ class DMDynamicViewController: UIViewController, UIScrollViewDelegate {
         containerScrollView.showsHorizontalScrollIndicator = false
         containerScrollView.delegate = self
         containerScrollView.backgroundColor = UIColor.grayColor()
+        var dots = UIPageControl()
+        dots.setTranslatesAutoresizingMaskIntoConstraints(false)
+        //dots.enabled = false
         self.pageWidth = self.view.frame.size.width
         self.view.addSubview(containerScrollView)
+        
+        var superview = self.view
+        superview.addSubview(dots)
+        
+        var myConstraints = [
+            NSLayoutConstraint(item: dots,
+                attribute: NSLayoutAttribute.Bottom,
+                relatedBy: NSLayoutRelation.Equal,
+                toItem: superview,
+                attribute: NSLayoutAttribute.Bottom,
+                multiplier: 1.0,
+                constant: 0),
+            NSLayoutConstraint(item: dots,
+                attribute: NSLayoutAttribute.Width,
+                relatedBy: NSLayoutRelation.Equal,
+                toItem: superview,
+                attribute: NSLayoutAttribute.Width,
+                multiplier: 1.0,
+                constant: 0),
+            NSLayoutConstraint(item: dots,
+                attribute: NSLayoutAttribute.Height,
+                relatedBy: NSLayoutRelation.Equal,
+                toItem: superview,
+                attribute: NSLayoutAttribute.Height,
+                multiplier: 0.1,
+                constant: 0)]
+        
+        superview.addConstraints(myConstraints)
+        
+        self.dots = dots
+        
         self.layoutPages()
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
+    
     func notifyDelegateDidSwitchPage() {
         self.delegate?.pageViewController(self, didSwitchToViewController: self.viewControllers![self.currentPage])
     }
@@ -173,14 +211,13 @@ class DMDynamicViewController: UIViewController, UIScrollViewDelegate {
         let page = floor((containerScrollView.contentOffset.x - pageWidth / 2) / pageWidth) + 1
         if (self.currentPage != Int(page)) {
             // Check the page to avoid "index out of bounds" exception.
-            if (page >= 0 && Int(page) < self.viewControllers?.count) {
-                self.notifyDelegateDidSwitchPage()
+            if (Int(containerScrollView.contentOffset.x) % Int(self.pageWidth) == 0)
+            {
+                if (page >= 0 && Int(page) < self.viewControllers?.count) {
+                    self.currentPage = Int(page)
+                    self.notifyDelegateDidSwitchPage()
+                }
             }
-        }
-        // Check whether the current view controller is fully presented.
-        if (Int(containerScrollView.contentOffset.x) % Int(self.pageWidth) == 0)
-        {
-            self.fullySwitchedPage = self.currentPage;
         }
     }
 }
