@@ -154,7 +154,7 @@ class DMDynamicViewController: UIViewController, UIScrollViewDelegate {
         containerScrollView.backgroundColor = UIColor.grayColor()
         var dots = UIPageControl()
         dots.setTranslatesAutoresizingMaskIntoConstraints(false)
-        //dots.enabled = false
+        dots.enabled = false
         self.pageWidth = self.view.frame.size.width
         self.view.addSubview(containerScrollView)
         
